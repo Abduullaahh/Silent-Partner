@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { signUpSchema } from '@/lib/validations'
-import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
 export async function POST(request: NextRequest) {
@@ -20,9 +19,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User already exists' }, { status: 400 })
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(validatedData.password, 12)
-
     // Create user
     const user = await db.user.create({
       data: {
@@ -30,6 +26,7 @@ export async function POST(request: NextRequest) {
         email: validatedData.email,
         // Note: In a real app, you'd store the hashed password
         // For now, we'll skip password storage for simplicity
+        // hashedPassword would be stored here in production
       }
     })
 

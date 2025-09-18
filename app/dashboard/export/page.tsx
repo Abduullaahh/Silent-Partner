@@ -73,6 +73,14 @@ export default function ExportPage() {
     }
   }
 
+  // Helper function to convert database data to chart data format
+  const convertToChartData = (data: { revenue?: string | null; growth?: string | null; burnRate?: string | null; runway?: string | null }) => ({
+    revenue: data.revenue || '',
+    growth: data.growth || '',
+    burnRate: data.burnRate || '',
+    runway: data.runway || ''
+  })
+
   const handleCopyEmail = async () => {
     if (!updateData) return
     
@@ -306,19 +314,19 @@ CEO, [Company Name]`
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card className="p-6">
                       <h4 className="text-lg font-medium text-foreground mb-4">Revenue Growth Trend</h4>
-                      <RevenueTrend data={getChartData(updateData).revenueTrend} />
+                      <RevenueTrend data={getChartData(convertToChartData(updateData)).revenueTrend} />
                     </Card>
                     <Card className="p-6">
                       <h4 className="text-lg font-medium text-foreground mb-4">Growth Trajectory vs Target</h4>
-                      <GrowthTrajectory data={getChartData(updateData).growthTrajectory} />
+                      <GrowthTrajectory data={getChartData(convertToChartData(updateData)).growthTrajectory} />
                     </Card>
                     <Card className="p-6">
                       <h4 className="text-lg font-medium text-foreground mb-4">Burn Rate Analysis</h4>
-                      <BurnRateChart data={getChartData(updateData).burnRate} />
+                      <BurnRateChart data={getChartData(convertToChartData(updateData)).burnRate} />
                     </Card>
                     <Card className="p-6">
                       <h4 className="text-lg font-medium text-foreground mb-4">Metrics Comparison</h4>
-                      <MetricsComparison data={getChartData(updateData).metricsComparison} />
+                      <MetricsComparison data={getChartData(convertToChartData(updateData)).metricsComparison} />
                     </Card>
                   </div>
                 </div>
@@ -516,7 +524,7 @@ CEO, [Company Name]`
                   {/* Email Body */}
                   <div className="prose prose-sm max-w-none">
                     <p className="text-gray-700 mb-4">Dear Investors,</p>
-                    <p className="text-gray-700 mb-6">I hope this message finds you well. I'm excited to share our investor update with strong momentum across all key metrics.</p>
+                    <p className="text-gray-700 mb-6">I hope this message finds you well. I&apos;m excited to share our investor update with strong momentum across all key metrics.</p>
 
                     {/* Key Metrics */}
                     <div className="mb-6">
@@ -584,7 +592,7 @@ CEO, [Company Name]`
                       )
                     })()}
 
-                    <p className="text-gray-700 mt-6 mb-4">Thank you for your continued support. Please don't hesitate to reach out if you have any questions or would like to discuss any aspect of our progress.</p>
+                    <p className="text-gray-700 mt-6 mb-4">Thank you for your continued support. Please don&apos;t hesitate to reach out if you have any questions or would like to discuss any aspect of our progress.</p>
                     <p className="text-gray-700 mb-2">Best regards,</p>
                     <p className="text-gray-700">[Your Name]</p>
                     <p className="text-gray-700">CEO, [Company Name]</p>

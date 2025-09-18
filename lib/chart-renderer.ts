@@ -1,12 +1,13 @@
-import { createElement } from 'react'
-import { renderToString } from 'react-dom/server'
-import { RevenueTrend } from '@/components/charts/revenue-trend'
-import { BurnRateChart } from '@/components/charts/burn-rate-chart'
-import { MetricsComparison } from '@/components/charts/metrics-comparison'
-import { GrowthTrajectory } from '@/components/charts/growth-trajectory'
 import { generateRevenueTrendData, generateBurnRateData, generateMetricsComparisonData, generateGrowthTrajectoryData } from './chart-data-generator'
 
-export async function renderChartToImage(chartType: string, data: any): Promise<string> {
+interface UpdateData {
+  revenue?: string
+  growth?: string
+  burnRate?: string
+  runway?: string
+}
+
+export async function renderChartToImage(chartType: string): Promise<string> {
   // For now, we'll return a placeholder. In a real implementation, you would:
   // 1. Render the React component to HTML
   // 2. Use a headless browser (like Puppeteer) to capture the chart as an image
@@ -38,16 +39,16 @@ export async function renderChartToImage(chartType: string, data: any): Promise<
   return canvas.toDataURL('image/png')
 }
 
-export function getChartData(updateData: any) {
+export function getChartData(updateData: UpdateData) {
   return {
-    revenueTrend: generateRevenueTrendData(updateData.revenue, updateData.growth),
-    burnRate: generateBurnRateData(updateData.burnRate, updateData.runway),
+    revenueTrend: generateRevenueTrendData(updateData.revenue || '', updateData.growth || ''),
+    burnRate: generateBurnRateData(updateData.burnRate || '', updateData.runway || ''),
     metricsComparison: generateMetricsComparisonData(
-      updateData.revenue, 
-      updateData.growth, 
-      updateData.burnRate, 
-      updateData.runway
+      updateData.revenue || '', 
+      updateData.growth || '', 
+      updateData.burnRate || '', 
+      updateData.runway || ''
     ),
-    growthTrajectory: generateGrowthTrajectoryData(updateData.growth)
+    growthTrajectory: generateGrowthTrajectoryData(updateData.growth || '')
   }
 }

@@ -1,6 +1,5 @@
 import jsPDF from 'jspdf'
 import { parseAISummary, formatSummaryForDisplay } from './format-ai-summary'
-import { getChartData } from './chart-renderer'
 
 export interface UpdateData {
   title: string
@@ -84,9 +83,6 @@ export function generateInvestorUpdatePDF(data: UpdateData): jsPDF {
   
   // Content sections
   let currentY = cardY + cardHeight + 30
-  
-  // Generate chart data
-  const chartData = getChartData(data)
   
   // Charts Section
   doc.setFontSize(16)

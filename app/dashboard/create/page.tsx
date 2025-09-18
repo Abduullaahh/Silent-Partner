@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
@@ -484,7 +484,7 @@ export default function CreateUpdatePage() {
                     <div className="p-6 bg-card/50 rounded-lg border border-border/30">
                       <h3 className="font-semibold text-foreground mb-3">Executive Summary</h3>
                       <p className="text-muted-foreground leading-relaxed">
-                        We're excited to share strong momentum this quarter with {form.watch("revenue") || "$125K"} in MRR,
+                        We&apos;re excited to share strong momentum this quarter with {form.watch("revenue") || "$125K"} in MRR,
                         representing {form.watch("growth") || "23%"} growth. Our current burn rate of{" "}
                         {form.watch("burnRate") || "$45K"} gives us {form.watch("runway") || "18 months"} of runway. The team
                         continues to execute on our roadmap while maintaining healthy unit economics and sustainable growth.
