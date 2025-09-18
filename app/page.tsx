@@ -26,10 +26,14 @@ export default function LandingPage() {
               <Link href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
                 FAQ
               </Link>
-              <Button variant="outline" size="sm">
-                Sign In
-              </Button>
-              <Button size="sm">Start Free Trial</Button>
+              <Link href="/auth/login">
+                <Button variant="outline" size="sm">
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth/signup">
+                <Button size="sm">Start Free Trial</Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -58,10 +62,12 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-              <Button size="lg" className="text-lg px-8 py-6 h-auto">
-                Start Free Trial
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+              <Link href="/auth/signup">
+                <Button size="lg" className="text-lg px-8 py-6 h-auto">
+                  Start Free Trial
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
               <Button variant="outline" size="lg" className="text-lg px-8 py-6 h-auto bg-transparent">
                 Watch Demo
               </Button>
@@ -175,9 +181,11 @@ export default function LandingPage() {
                   Basic support
                 </li>
               </ul>
-              <Button className="w-full bg-transparent" variant="outline">
-                Start Free Trial
-              </Button>
+              <Link href="/auth/signup">
+                <Button className="w-full bg-transparent" variant="outline">
+                  Start Free Trial
+                </Button>
+              </Link>
             </Card>
 
             <Card className="p-8 border-primary bg-background relative">
@@ -215,7 +223,9 @@ export default function LandingPage() {
                   Analytics dashboard
                 </li>
               </ul>
-              <Button className="w-full">Start Free Trial</Button>
+              <Link href="/auth/signup">
+                <Button className="w-full">Start Free Trial</Button>
+              </Link>
             </Card>
           </div>
         </div>

@@ -1,3 +1,8 @@
+"use client"
+
+import { useState } from "react"
+import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -6,6 +11,36 @@ import { ArrowLeft, Mail, Lock, Eye } from "lucide-react"
 import Link from "next/link"
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const router = useRouter()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError("Invalid email or password")
+      } else {
+        router.push("/dashboard")
+      }
+    } catch (error) {
+      setError("An error occurred. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -27,7 +62,13 @@ export default function LoginPage() {
             <p className="text-muted-foreground">Sign in to your Silent Partner account</p>
           </div>
 
-          <form className="space-y-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email Address
@@ -38,6 +79,9 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
                   className="pl-10 h-12 bg-background border-border/50 focus:border-primary"
                 />
               </div>
@@ -58,6 +102,9 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   className="pl-10 pr-10 h-12 bg-background border-border/50 focus:border-primary"
                 />
                 <button
@@ -80,7 +127,13 @@ export default function LoginPage() {
               </Label>
             </div>
 
-            <Button className="w-full h-12 text-base font-medium">Sign In</Button>
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-base font-medium" 
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </Button>
           </form>
 
           <div className="mt-8 text-center">

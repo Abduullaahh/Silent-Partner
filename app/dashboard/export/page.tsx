@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { parseAISummary, formatSummaryForDisplay } from "@/lib/format-ai-summary"
 import {
   ArrowLeft,
   Download,
@@ -21,57 +23,135 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
+interface UpdateData {
+  id: string
+  title: string
+  revenue: string | null
+  burnRate: string | null
+  runway: string | null
+  growth: string | null
+  highlights: string | null
+  challenges: string | null
+  asks: string | null
+  aiSummary: string | null
+  createdAt: string
+  status: string
+}
+
 export default function ExportPage() {
   const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState("preview")
+  const [updateData, setUpdateData] = useState<UpdateData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const searchParams = useSearchParams()
+  const updateId = searchParams.get('id')
+
+  useEffect(() => {
+    if (updateId) {
+      fetchUpdateData(updateId)
+    } else {
+      setLoading(false)
+    }
+  }, [updateId])
+
+  const fetchUpdateData = async (id: string) => {
+    try {
+      const response = await fetch(`/api/updates/${id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setUpdateData(data)
+      }
+    } catch (error) {
+      console.error('Error fetching update data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleCopyEmail = async () => {
-    const emailContent = `Subject: Q4 2024 Investor Update - Strong Growth Continues
+    if (!updateData) return
+    
+    const parsedSummary = updateData.aiSummary ? parseAISummary(updateData.aiSummary) : null
+    
+    const emailContent = `Subject: ${updateData.title}
 
 Dear Investors,
 
-I hope this message finds you well. I'm excited to share our Q4 2024 investor update with strong momentum across all key metrics.
+I hope this message finds you well. I'm excited to share our investor update with strong momentum across all key metrics.
 
 ## Key Metrics
-• Monthly Recurring Revenue: $125,000 (+23% growth)
-• Monthly Burn Rate: $45,000
-• Runway: 18 months
-• Customer Growth: +15% this quarter
+${updateData.revenue ? `• Monthly Recurring Revenue: ${updateData.revenue}` : ''}
+${updateData.growth ? `• Growth Rate: ${updateData.growth}` : ''}
+${updateData.burnRate ? `• Monthly Burn Rate: ${updateData.burnRate}` : ''}
+${updateData.runway ? `• Runway: ${updateData.runway}` : ''}
 
 ## Executive Summary
-We're excited to share strong momentum this quarter with $125K in MRR, representing 23% growth. Our current burn rate of $45K gives us 18 months of runway. The team continues to execute on our roadmap while maintaining healthy unit economics and sustainable growth.
+${parsedSummary?.executiveSummary || updateData.aiSummary || 'Update summary will be generated here.'}
 
 ## Key Highlights
-• Launched new enterprise features that increased average deal size by 40%
-• Signed 3 major enterprise clients including Fortune 500 company
-• Expanded team with senior engineering hire from Google
-• Achieved 95% customer satisfaction score in quarterly survey
+${parsedSummary?.highlights ? formatSummaryForDisplay(parsedSummary.highlights) : (updateData.highlights || 'Key highlights will be listed here.')}
 
 ## Challenges & Mitigation
-Market conditions have created longer sales cycles, but we're adapting our strategy to focus on higher-value enterprise deals. We're also investing in customer success to improve retention and expansion revenue.
+${parsedSummary?.challenges ? formatSummaryForDisplay(parsedSummary.challenges) : (updateData.challenges || 'Current challenges and mitigation strategies will be outlined here.')}
 
 ## How You Can Help
-• Introductions to enterprise prospects in fintech and healthcare
-• Connections to experienced VP of Sales candidates
-• Feedback on our Series A deck as we prepare for next round
+${parsedSummary?.asks ? formatSummaryForDisplay(parsedSummary.asks) : (updateData.asks || 'Specific asks for investor support will be listed here.')}
 
 Thank you for your continued support. Please don't hesitate to reach out if you have any questions or would like to discuss any aspect of our progress.
 
 Best regards,
-John Doe
-CEO, Silent Partner`
+[Your Name]
+CEO, [Company Name]`
 
     await navigator.clipboard.writeText(emailContent)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleDownloadPDF = () => {
-    // Simulate PDF download
-    const link = document.createElement("a")
-    link.href = "/sample-investor-update.pdf"
-    link.download = "Q4-2024-Investor-Update.pdf"
-    link.click()
+  const handleDownloadPDF = async () => {
+    if (!updateData) return
+    
+    try {
+      const response = await fetch(`/api/updates/${updateData.id}/pdf`)
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement("a")
+        link.href = url
+        link.download = `${updateData.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`
+        link.click()
+        window.URL.revokeObjectURL(url)
+      } else {
+        console.error('Failed to generate PDF')
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading update...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!updateData) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-2">Update not found</h1>
+          <p className="text-muted-foreground mb-4">The requested update could not be found.</p>
+          <Link href="/dashboard">
+            <Button>Back to Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -108,7 +188,7 @@ CEO, Silent Partner`
             <div className="flex items-center space-x-2">
               <Badge variant="secondary" className="bg-green-500/10 text-green-700 border-green-500/20">
                 <Calendar className="w-3 h-3 mr-1" />
-                Generated Dec 15, 2024
+                Generated {new Date(updateData.createdAt).toLocaleDateString()}
               </Badge>
             </div>
           </div>
@@ -166,93 +246,91 @@ CEO, Silent Partner`
             <Card className="p-8 border-border/50 bg-background">
               {/* Header */}
               <div className="text-center mb-8 pb-6 border-b border-border/30">
-                <h2 className="text-2xl font-bold text-foreground mb-2">Q4 2024 Investor Update</h2>
-                <p className="text-muted-foreground">Silent Partner • December 15, 2024</p>
+                <h2 className="text-2xl font-bold text-foreground mb-2">{updateData.title}</h2>
+                <p className="text-muted-foreground">Silent Partner • {new Date(updateData.createdAt).toLocaleDateString()}</p>
               </div>
 
               {/* KPI Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                <div className="text-center p-4 bg-card/50 rounded-lg border border-border/30">
-                  <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground mb-1">$125K</div>
-                  <div className="text-sm text-muted-foreground">Monthly Recurring Revenue</div>
-                </div>
-                <div className="text-center p-4 bg-card/50 rounded-lg border border-border/30">
-                  <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-green-500 mb-1">+23%</div>
-                  <div className="text-sm text-muted-foreground">Growth Rate</div>
-                </div>
-                <div className="text-center p-4 bg-card/50 rounded-lg border border-border/30">
-                  <Target className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-foreground mb-1">$45K</div>
-                  <div className="text-sm text-muted-foreground">Monthly Burn Rate</div>
-                </div>
-                <div className="text-center p-4 bg-card/50 rounded-lg border border-border/30">
-                  <Calendar className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-blue-500 mb-1">18mo</div>
-                  <div className="text-sm text-muted-foreground">Runway</div>
-                </div>
+                {updateData.revenue && (
+                  <div className="text-center p-4 bg-card/50 rounded-lg border border-border/30">
+                    <DollarSign className="w-8 h-8 text-primary mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-foreground mb-1">{updateData.revenue}</div>
+                    <div className="text-sm text-muted-foreground">Monthly Recurring Revenue</div>
+                  </div>
+                )}
+                {updateData.growth && (
+                  <div className="text-center p-4 bg-card/50 rounded-lg border border-border/30">
+                    <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-green-500 mb-1">{updateData.growth}</div>
+                    <div className="text-sm text-muted-foreground">Growth Rate</div>
+                  </div>
+                )}
+                {updateData.burnRate && (
+                  <div className="text-center p-4 bg-card/50 rounded-lg border border-border/30">
+                    <Target className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-foreground mb-1">{updateData.burnRate}</div>
+                    <div className="text-sm text-muted-foreground">Monthly Burn Rate</div>
+                  </div>
+                )}
+                {updateData.runway && (
+                  <div className="text-center p-4 bg-card/50 rounded-lg border border-border/30">
+                    <Calendar className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-blue-500 mb-1">{updateData.runway}</div>
+                    <div className="text-sm text-muted-foreground">Runway</div>
+                  </div>
+                )}
               </div>
 
               {/* Content Sections */}
               <div className="space-y-8">
-                <section>
-                  <h3 className="text-xl font-semibold text-foreground mb-4">Executive Summary</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    We're excited to share strong momentum this quarter with $125K in MRR, representing 23% growth. Our
-                    current burn rate of $45K gives us 18 months of runway. The team continues to execute on our roadmap
-                    while maintaining healthy unit economics and sustainable growth.
-                  </p>
-                </section>
+                {(() => {
+                  const parsedSummary = updateData.aiSummary ? parseAISummary(updateData.aiSummary) : null
+                  
+                  return (
+                    <>
+                      {/* Executive Summary */}
+                      {(parsedSummary?.executiveSummary || updateData.aiSummary) && (
+                        <section>
+                          <h3 className="text-xl font-semibold text-foreground mb-4">Executive Summary</h3>
+                          <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                            {parsedSummary?.executiveSummary || updateData.aiSummary}
+                          </div>
+                        </section>
+                      )}
 
-                <section>
-                  <h3 className="text-xl font-semibold text-foreground mb-4">Key Highlights</h3>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Launched new enterprise features that increased average deal size by 40%</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Signed 3 major enterprise clients including Fortune 500 company</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Expanded team with senior engineering hire from Google</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Achieved 95% customer satisfaction score in quarterly survey</span>
-                    </li>
-                  </ul>
-                </section>
+                      {/* Key Highlights */}
+                      {(parsedSummary?.highlights || updateData.highlights) && (
+                        <section>
+                          <h3 className="text-xl font-semibold text-foreground mb-4">Key Highlights</h3>
+                          <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                            {formatSummaryForDisplay(parsedSummary?.highlights || updateData.highlights || '')}
+                          </div>
+                        </section>
+                      )}
 
-                <section>
-                  <h3 className="text-xl font-semibold text-foreground mb-4">Challenges & Mitigation</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Market conditions have created longer sales cycles, but we're adapting our strategy to focus on
-                    higher-value enterprise deals. We're also investing in customer success to improve retention and
-                    expansion revenue.
-                  </p>
-                </section>
+                      {/* Challenges & Mitigation */}
+                      {(parsedSummary?.challenges || updateData.challenges) && (
+                        <section>
+                          <h3 className="text-xl font-semibold text-foreground mb-4">Challenges & Mitigation</h3>
+                          <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                            {formatSummaryForDisplay(parsedSummary?.challenges || updateData.challenges || '')}
+                          </div>
+                        </section>
+                      )}
 
-                <section>
-                  <h3 className="text-xl font-semibold text-foreground mb-4">How You Can Help</h3>
-                  <ul className="space-y-2 text-muted-foreground">
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Introductions to enterprise prospects in fintech and healthcare</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Connections to experienced VP of Sales candidates</span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                      <span>Feedback on our Series A deck as we prepare for next round</span>
-                    </li>
-                  </ul>
-                </section>
+                      {/* How You Can Help */}
+                      {(parsedSummary?.asks || updateData.asks) && (
+                        <section>
+                          <h3 className="text-xl font-semibold text-foreground mb-4">How You Can Help</h3>
+                          <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                            {formatSummaryForDisplay(parsedSummary?.asks || updateData.asks || '')}
+                          </div>
+                        </section>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             </Card>
           </TabsContent>

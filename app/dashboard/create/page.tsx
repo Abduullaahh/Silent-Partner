@@ -1,12 +1,16 @@
 "use client"
 
 import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
+import { createUpdateSchema, type CreateUpdateInput } from "@/lib/validations"
+import { parseAISummary, formatSummaryForDisplay } from "@/lib/format-ai-summary"
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,33 +23,102 @@ import {
   Lightbulb,
 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function CreateUpdatePage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [formData, setFormData] = useState({
-    revenue: "",
-    burnRate: "",
-    runway: "",
-    growth: "",
-    highlights: "",
-    challenges: "",
-    asks: "",
+  const [isSaving, setIsSaving] = useState(false)
+  const [updateId, setUpdateId] = useState<string | null>(null)
+  const router = useRouter()
+
+  const form = useForm<CreateUpdateInput>({
+    resolver: zodResolver(createUpdateSchema),
+    defaultValues: {
+      title: `Q${Math.ceil((new Date().getMonth() + 1) / 3)} ${new Date().getFullYear()} Investor Update`,
+      revenue: "",
+      burnRate: "",
+      runway: "",
+      growth: "",
+      highlights: "",
+      challenges: "",
+      asks: "",
+    }
   })
 
   const totalSteps = 3
   const progress = (currentStep / totalSteps) * 100
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
   const handleGenerate = async () => {
     setIsGenerating(true)
-    // Simulate AI generation
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-    setIsGenerating(false)
-    setCurrentStep(3)
+    try {
+      // First save the update
+      const formData = form.getValues()
+      const response = await fetch('/api/updates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save update')
+      }
+
+      const update = await response.json()
+      setUpdateId(update.id)
+
+      // Generate AI summary
+      const summaryResponse = await fetch(`/api/updates/${update.id}/generate-summary`, {
+        method: 'POST',
+      })
+
+      if (!summaryResponse.ok) {
+        throw new Error('Failed to generate AI summary')
+      }
+
+      const { aiSummary } = await summaryResponse.json()
+      
+      // Update the form with AI summary
+      form.setValue('aiSummary', aiSummary)
+      
+      setCurrentStep(3)
+    } catch (error) {
+      console.error('Error generating update:', error)
+      // Handle error - you might want to show a toast or error message
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleSaveDraft = async () => {
+    setIsSaving(true)
+    try {
+      const formData = form.getValues()
+      const response = await fetch('/api/updates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save update')
+      }
+
+      const update = await response.json()
+      setUpdateId(update.id)
+      
+      // Redirect to dashboard
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Error saving update:', error)
+      // Handle error
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -101,10 +174,12 @@ export default function CreateUpdatePage() {
                   id="revenue"
                   type="text"
                   placeholder="e.g., $125,000"
-                  value={formData.revenue}
-                  onChange={(e) => handleInputChange("revenue", e.target.value)}
+                  {...form.register("revenue")}
                   className="h-12 bg-background border-border/50 focus:border-primary"
                 />
+                {form.formState.errors.revenue && (
+                  <p className="text-sm text-red-500">{form.formState.errors.revenue.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -116,10 +191,12 @@ export default function CreateUpdatePage() {
                   id="growth"
                   type="text"
                   placeholder="e.g., 23%"
-                  value={formData.growth}
-                  onChange={(e) => handleInputChange("growth", e.target.value)}
+                  {...form.register("growth")}
                   className="h-12 bg-background border-border/50 focus:border-primary"
                 />
+                {form.formState.errors.growth && (
+                  <p className="text-sm text-red-500">{form.formState.errors.growth.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -131,10 +208,12 @@ export default function CreateUpdatePage() {
                   id="burnRate"
                   type="text"
                   placeholder="e.g., $45,000"
-                  value={formData.burnRate}
-                  onChange={(e) => handleInputChange("burnRate", e.target.value)}
+                  {...form.register("burnRate")}
                   className="h-12 bg-background border-border/50 focus:border-primary"
                 />
+                {form.formState.errors.burnRate && (
+                  <p className="text-sm text-red-500">{form.formState.errors.burnRate.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -146,10 +225,12 @@ export default function CreateUpdatePage() {
                   id="runway"
                   type="text"
                   placeholder="e.g., 18 months"
-                  value={formData.runway}
-                  onChange={(e) => handleInputChange("runway", e.target.value)}
+                  {...form.register("runway")}
                   className="h-12 bg-background border-border/50 focus:border-primary"
                 />
+                {form.formState.errors.runway && (
+                  <p className="text-sm text-red-500">{form.formState.errors.runway.message}</p>
+                )}
               </div>
             </div>
 
@@ -179,11 +260,13 @@ export default function CreateUpdatePage() {
                 <Textarea
                   id="highlights"
                   placeholder="Share your biggest wins, product launches, partnerships, team additions, etc."
-                  value={formData.highlights}
-                  onChange={(e) => handleInputChange("highlights", e.target.value)}
+                  {...form.register("highlights")}
                   className="min-h-[120px] bg-background border-border/50 focus:border-primary resize-none"
                 />
                 <p className="text-xs text-muted-foreground">Focus on measurable achievements and milestones</p>
+                {form.formState.errors.highlights && (
+                  <p className="text-sm text-red-500">{form.formState.errors.highlights.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -194,11 +277,13 @@ export default function CreateUpdatePage() {
                 <Textarea
                   id="challenges"
                   placeholder="Be transparent about obstacles, market conditions, or operational challenges you're facing."
-                  value={formData.challenges}
-                  onChange={(e) => handleInputChange("challenges", e.target.value)}
+                  {...form.register("challenges")}
                   className="min-h-[120px] bg-background border-border/50 focus:border-primary resize-none"
                 />
                 <p className="text-xs text-muted-foreground">Transparency builds trust with investors</p>
+                {form.formState.errors.challenges && (
+                  <p className="text-sm text-red-500">{form.formState.errors.challenges.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -209,11 +294,13 @@ export default function CreateUpdatePage() {
                 <Textarea
                   id="asks"
                   placeholder="What specific help do you need? Introductions, expertise, additional funding, etc."
-                  value={formData.asks}
-                  onChange={(e) => handleInputChange("asks", e.target.value)}
+                  {...form.register("asks")}
                   className="min-h-[120px] bg-background border-border/50 focus:border-primary resize-none"
                 />
                 <p className="text-xs text-muted-foreground">Be specific about how investors can help</p>
+                {form.formState.errors.asks && (
+                  <p className="text-sm text-red-500">{form.formState.errors.asks.message}</p>
+                )}
               </div>
             </div>
 
@@ -252,25 +339,25 @@ export default function CreateUpdatePage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <Card className="p-4 bg-card border-border/30">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-foreground mb-1">{formData.revenue || "$125K"}</div>
+                    <div className="text-2xl font-bold text-foreground mb-1">{form.watch("revenue") || "$125K"}</div>
                     <div className="text-sm text-muted-foreground">MRR</div>
                   </div>
                 </Card>
                 <Card className="p-4 bg-card border-border/30">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-500 mb-1">{formData.growth || "+23%"}</div>
+                    <div className="text-2xl font-bold text-green-500 mb-1">{form.watch("growth") || "+23%"}</div>
                     <div className="text-sm text-muted-foreground">Growth</div>
                   </div>
                 </Card>
                 <Card className="p-4 bg-card border-border/30">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-foreground mb-1">{formData.burnRate || "$45K"}</div>
+                    <div className="text-2xl font-bold text-foreground mb-1">{form.watch("burnRate") || "$45K"}</div>
                     <div className="text-sm text-muted-foreground">Burn Rate</div>
                   </div>
                 </Card>
                 <Card className="p-4 bg-card border-border/30">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-500 mb-1">{formData.runway || "18mo"}</div>
+                    <div className="text-2xl font-bold text-blue-500 mb-1">{form.watch("runway") || "18mo"}</div>
                     <div className="text-sm text-muted-foreground">Runway</div>
                   </div>
                 </Card>
@@ -278,39 +365,86 @@ export default function CreateUpdatePage() {
 
               {/* AI Generated Summary */}
               <div className="space-y-6">
-                <div className="p-6 bg-card/50 rounded-lg border border-border/30">
-                  <h3 className="font-semibold text-foreground mb-3">Executive Summary</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    We're excited to share strong momentum this quarter with {formData.revenue || "$125K"} in MRR,
-                    representing {formData.growth || "23%"} growth. Our current burn rate of{" "}
-                    {formData.burnRate || "$45K"} gives us {formData.runway || "18 months"} of runway. The team
-                    continues to execute on our roadmap while maintaining healthy unit economics and sustainable growth.
-                  </p>
-                </div>
+                {form.watch("aiSummary") ? (
+                  (() => {
+                    const parsedSummary = parseAISummary(form.watch("aiSummary") || "")
+                    return (
+                      <div className="space-y-6">
+                        {parsedSummary.executiveSummary && (
+                          <div className="p-6 bg-card/50 rounded-lg border border-border/30">
+                            <h3 className="font-semibold text-foreground mb-3">Executive Summary</h3>
+                            <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                              {parsedSummary.executiveSummary}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {parsedSummary.highlights && (
+                          <div className="p-6 bg-card/50 rounded-lg border border-border/30">
+                            <h3 className="font-semibold text-foreground mb-3">Key Highlights</h3>
+                            <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                              {formatSummaryForDisplay(parsedSummary.highlights)}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {parsedSummary.challenges && (
+                          <div className="p-6 bg-card/50 rounded-lg border border-border/30">
+                            <h3 className="font-semibold text-foreground mb-3">Challenges & Mitigation</h3>
+                            <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                              {formatSummaryForDisplay(parsedSummary.challenges)}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {parsedSummary.asks && (
+                          <div className="p-6 bg-card/50 rounded-lg border border-border/30">
+                            <h3 className="font-semibold text-foreground mb-3">How You Can Help</h3>
+                            <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                              {formatSummaryForDisplay(parsedSummary.asks)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()
+                ) : (
+                  <>
+                    <div className="p-6 bg-card/50 rounded-lg border border-border/30">
+                      <h3 className="font-semibold text-foreground mb-3">Executive Summary</h3>
+                      <p className="text-muted-foreground leading-relaxed">
+                        We're excited to share strong momentum this quarter with {form.watch("revenue") || "$125K"} in MRR,
+                        representing {form.watch("growth") || "23%"} growth. Our current burn rate of{" "}
+                        {form.watch("burnRate") || "$45K"} gives us {form.watch("runway") || "18 months"} of runway. The team
+                        continues to execute on our roadmap while maintaining healthy unit economics and sustainable growth.
+                      </p>
+                    </div>
 
-                <div className="p-6 bg-card/50 rounded-lg border border-border/30">
-                  <h3 className="font-semibold text-foreground mb-3">Key Highlights</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {formData.highlights ||
-                      "• Launched new enterprise features that increased average deal size by 40%\n• Signed 3 major enterprise clients including Fortune 500 company\n• Expanded team with senior engineering hire from Google\n• Achieved 95% customer satisfaction score in quarterly survey"}
-                  </p>
-                </div>
+                    <div className="p-6 bg-card/50 rounded-lg border border-border/30">
+                      <h3 className="font-semibold text-foreground mb-3">Key Highlights</h3>
+                      <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                        {form.watch("highlights") ||
+                          "• Launched new enterprise features that increased average deal size by 40%\n• Signed 3 major enterprise clients including Fortune 500 company\n• Expanded team with senior engineering hire from Google\n• Achieved 95% customer satisfaction score in quarterly survey"}
+                      </div>
+                    </div>
 
-                <div className="p-6 bg-card/50 rounded-lg border border-border/30">
-                  <h3 className="font-semibold text-foreground mb-3">Challenges & Mitigation</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {formData.challenges ||
-                      "Market conditions have created longer sales cycles, but we're adapting our strategy to focus on higher-value enterprise deals. We're also investing in customer success to improve retention and expansion revenue."}
-                  </p>
-                </div>
+                    <div className="p-6 bg-card/50 rounded-lg border border-border/30">
+                      <h3 className="font-semibold text-foreground mb-3">Challenges & Mitigation</h3>
+                      <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                        {form.watch("challenges") ||
+                          "Market conditions have created longer sales cycles, but we're adapting our strategy to focus on higher-value enterprise deals. We're also investing in customer success to improve retention and expansion revenue."}
+                      </div>
+                    </div>
 
-                <div className="p-6 bg-card/50 rounded-lg border border-border/30">
-                  <h3 className="font-semibold text-foreground mb-3">How You Can Help</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {formData.asks ||
-                      "• Introductions to enterprise prospects in fintech and healthcare\n• Connections to experienced VP of Sales candidates\n• Feedback on our Series A deck as we prepare for next round"}
-                  </p>
-                </div>
+                    <div className="p-6 bg-card/50 rounded-lg border border-border/30">
+                      <h3 className="font-semibold text-foreground mb-3">How You Can Help</h3>
+                      <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                        {form.watch("asks") ||
+                          "• Introductions to enterprise prospects in fintech and healthcare\n• Connections to experienced VP of Sales candidates\n• Feedback on our Series A deck as we prepare for next round"}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </Card>
 
@@ -320,13 +454,21 @@ export default function CreateUpdatePage() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Edit Details
               </Button>
-              <Button className="flex-1">Save Draft</Button>
-              <Link href="/dashboard/export" className="flex-1">
-                <Button className="w-full">
-                  Continue to Export
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+              <Button 
+                onClick={handleSaveDraft} 
+                disabled={isSaving}
+                className="flex-1"
+              >
+                {isSaving ? "Saving..." : "Save Draft"}
+              </Button>
+              {updateId && (
+                <Link href={`/dashboard/export?id=${updateId}`} className="flex-1">
+                  <Button className="w-full">
+                    Continue to Export
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         )}

@@ -43,13 +43,67 @@ export default function DashboardPage() {
       growth: "+12%",
       recipients: 6,
     },
+    {
+      id: 5,
+      title: "July Performance Review",
+      date: "2024-07-31",
+      status: "sent",
+      revenue: "$82K",
+      growth: "+8%",
+      recipients: 6,
+    },
+    {
+      id: 6,
+      title: "Q2 2024 Investor Update",
+      date: "2024-06-30",
+      status: "sent",
+      revenue: "$75K",
+      growth: "+5%",
+      recipients: 6,
+    },
+    {
+      id: 7,
+      title: "May Growth Update",
+      date: "2024-05-31",
+      status: "sent",
+      revenue: "$68K",
+      growth: "+3%",
+      recipients: 5,
+    },
+    {
+      id: 8,
+      title: "April Progress Report",
+      date: "2024-04-30",
+      status: "sent",
+      revenue: "$62K",
+      growth: "+2%",
+      recipients: 5,
+    },
+    {
+      id: 9,
+      title: "March Milestone Update",
+      date: "2024-03-31",
+      status: "sent",
+      revenue: "$58K",
+      growth: "+1%",
+      recipients: 4,
+    },
+    {
+      id: 10,
+      title: "Q1 2024 Investor Update",
+      date: "2024-03-31",
+      status: "sent",
+      revenue: "$55K",
+      growth: "0%",
+      recipients: 4,
+    },
   ]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header className="border-b border-border/40 bg-background/80 backdrop-blur-sm flex-shrink-0">
+        <div className="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <Link href="/" className="flex items-center space-x-2">
@@ -74,9 +128,10 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="w-full max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8 flex-1 flex flex-col overflow-hidden">
         {/* Welcome Section */}
-        <div className="mb-8">
+        <div className="mb-8 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">Welcome back, John</h1>
@@ -92,7 +147,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 flex-shrink-0">
           <Card className="p-6 border-border/50 bg-background">
             <div className="flex items-center justify-between">
               <div>
@@ -144,88 +199,93 @@ export default function DashboardPage() {
         </div>
 
         {/* Updates List */}
-        <Card className="border-border/50 bg-background">
-          <div className="p-6 border-b border-border/40">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground mb-1">Recent Updates</h2>
-                <p className="text-muted-foreground">Manage your investor communications</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm">
-                  <Search className="w-4 h-4 mr-2" />
-                  Search
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filter
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="divide-y divide-border/40">
-            {updates.map((update) => (
-              <div key={update.id} className="p-6 hover:bg-card/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="font-semibold text-foreground">{update.title}</h3>
-                      <Badge
-                        variant={update.status === "sent" ? "default" : "secondary"}
-                        className={update.status === "sent" ? "bg-green-500/10 text-green-700 border-green-500/20" : ""}
-                      >
-                        {update.status === "sent" ? "Sent" : "Draft"}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{new Date(update.date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <span>Revenue: {update.revenue}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <TrendingUp className="w-4 h-4 text-green-500" />
-                        <span className="text-green-500">{update.growth}</span>
-                      </div>
-                      {update.status === "sent" && (
-                        <div className="flex items-center space-x-1">
-                          <span>{update.recipients} recipients</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    {update.status === "sent" && (
-                      <Button variant="ghost" size="sm">
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </div>
+        <div className="flex-1 flex flex-col min-h-0">
+          <Card className="border-border/50 bg-background h-full flex flex-col">
+            <div className="p-6 border-b border-border/40 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground mb-1">Recent Updates</h2>
+                  <p className="text-muted-foreground">Manage your investor communications</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm">
+                    <Search className="w-4 h-4 mr-2" />
+                    Search
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="p-6 border-t border-border/40 bg-card/30">
-            <div className="text-center">
-              <p className="text-muted-foreground mb-4">Ready to create your next update?</p>
-              <Link href="/dashboard/create">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Update
-                </Button>
-              </Link>
             </div>
-          </div>
-        </Card>
+
+            <div className="flex-1 overflow-y-auto">
+              <div className="divide-y divide-border/40">
+                {updates.map((update) => (
+                  <div key={update.id} className="p-6 hover:bg-card/50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="font-semibold text-foreground">{update.title}</h3>
+                          <Badge
+                            variant={update.status === "sent" ? "default" : "secondary"}
+                            className={update.status === "sent" ? "bg-green-500/10 text-green-700 border-green-500/20" : ""}
+                          >
+                            {update.status === "sent" ? "Sent" : "Draft"}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center space-x-6 text-sm text-muted-foreground">
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="w-4 h-4" />
+                            <span>{new Date(update.date).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <span>Revenue: {update.revenue}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <TrendingUp className="w-4 h-4 text-green-500" />
+                            <span className="text-green-500">{update.growth}</span>
+                          </div>
+                          {update.status === "sent" && (
+                            <div className="flex items-center space-x-1">
+                              <span>{update.recipients} recipients</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        {update.status === "sent" && (
+                          <Button variant="ghost" size="sm">
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-border/40 bg-card/30 flex-shrink-0">
+              <div className="text-center">
+                <p className="text-muted-foreground mb-4">Ready to create your next update?</p>
+                <Link href="/dashboard/create">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create New Update
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
+        </div>
+        </div>
       </div>
     </div>
   )
