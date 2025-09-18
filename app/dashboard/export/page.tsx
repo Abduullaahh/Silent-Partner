@@ -7,6 +7,11 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { parseAISummary, formatSummaryForDisplay } from "@/lib/format-ai-summary"
+import { RevenueTrend } from "@/components/charts/revenue-trend"
+import { BurnRateChart } from "@/components/charts/burn-rate-chart"
+import { MetricsComparison } from "@/components/charts/metrics-comparison"
+import { GrowthTrajectory } from "@/components/charts/growth-trajectory"
+import { getChartData } from "@/lib/chart-renderer"
 import {
   ArrowLeft,
   Download,
@@ -281,6 +286,31 @@ CEO, [Company Name]`
                   </div>
                 )}
               </div>
+
+              {/* Charts Section */}
+              {updateData && (
+                <div className="space-y-8">
+                  <h3 className="text-xl font-semibold text-foreground">Performance Analytics</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card className="p-6">
+                      <h4 className="text-lg font-medium text-foreground mb-4">Revenue Growth Trend</h4>
+                      <RevenueTrend data={getChartData(updateData).revenueTrend} />
+                    </Card>
+                    <Card className="p-6">
+                      <h4 className="text-lg font-medium text-foreground mb-4">Growth Trajectory vs Target</h4>
+                      <GrowthTrajectory data={getChartData(updateData).growthTrajectory} />
+                    </Card>
+                    <Card className="p-6">
+                      <h4 className="text-lg font-medium text-foreground mb-4">Burn Rate Analysis</h4>
+                      <BurnRateChart data={getChartData(updateData).burnRate} />
+                    </Card>
+                    <Card className="p-6">
+                      <h4 className="text-lg font-medium text-foreground mb-4">Metrics Comparison</h4>
+                      <MetricsComparison data={getChartData(updateData).metricsComparison} />
+                    </Card>
+                  </div>
+                </div>
+              )}
 
               {/* Content Sections */}
               <div className="space-y-8">

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
@@ -43,17 +43,29 @@ export default function CreateUpdatePage() {
       highlights: "",
       challenges: "",
       asks: "",
+      aiSummary: "",
     }
   })
 
   const totalSteps = 3
   const progress = (currentStep / totalSteps) * 100
 
+
   const handleGenerate = async () => {
     setIsGenerating(true)
     try {
-      // First save the update
-      const formData = form.getValues()
+      // First save the update to get an ID
+      const formData = {
+        title: form.watch('title'),
+        revenue: form.watch('revenue'),
+        burnRate: form.watch('burnRate'),
+        runway: form.watch('runway'),
+        growth: form.watch('growth'),
+        highlights: form.watch('highlights') || '',
+        challenges: form.watch('challenges') || '',
+        asks: form.watch('asks') || '',
+      }
+
       const response = await fetch('/api/updates', {
         method: 'POST',
         headers: {
@@ -69,7 +81,7 @@ export default function CreateUpdatePage() {
       const update = await response.json()
       setUpdateId(update.id)
 
-      // Generate AI summary
+      // Generate AI summary using the API
       const summaryResponse = await fetch(`/api/updates/${update.id}/generate-summary`, {
         method: 'POST',
       })
@@ -95,7 +107,18 @@ export default function CreateUpdatePage() {
   const handleSaveDraft = async () => {
     setIsSaving(true)
     try {
-      const formData = form.getValues()
+      // Get current form values using watch
+      const formData = {
+        title: form.watch('title'),
+        revenue: form.watch('revenue'),
+        burnRate: form.watch('burnRate'),
+        runway: form.watch('runway'),
+        growth: form.watch('growth'),
+        highlights: form.watch('highlights'),
+        challenges: form.watch('challenges'),
+        asks: form.watch('asks'),
+      }
+      
       const response = await fetch('/api/updates', {
         method: 'POST',
         headers: {
@@ -174,7 +197,8 @@ export default function CreateUpdatePage() {
                   id="revenue"
                   type="text"
                   placeholder="e.g., $125,000"
-                  {...form.register("revenue")}
+                  value={form.watch('revenue') || ''}
+                  onChange={(e) => form.setValue('revenue', e.target.value)}
                   className="h-12 bg-background border-border/50 focus:border-primary"
                 />
                 {form.formState.errors.revenue && (
@@ -191,7 +215,8 @@ export default function CreateUpdatePage() {
                   id="growth"
                   type="text"
                   placeholder="e.g., 23%"
-                  {...form.register("growth")}
+                  value={form.watch('growth') || ''}
+                  onChange={(e) => form.setValue('growth', e.target.value)}
                   className="h-12 bg-background border-border/50 focus:border-primary"
                 />
                 {form.formState.errors.growth && (
@@ -208,7 +233,8 @@ export default function CreateUpdatePage() {
                   id="burnRate"
                   type="text"
                   placeholder="e.g., $45,000"
-                  {...form.register("burnRate")}
+                  value={form.watch('burnRate') || ''}
+                  onChange={(e) => form.setValue('burnRate', e.target.value)}
                   className="h-12 bg-background border-border/50 focus:border-primary"
                 />
                 {form.formState.errors.burnRate && (
@@ -225,7 +251,8 @@ export default function CreateUpdatePage() {
                   id="runway"
                   type="text"
                   placeholder="e.g., 18 months"
-                  {...form.register("runway")}
+                  value={form.watch('runway') || ''}
+                  onChange={(e) => form.setValue('runway', e.target.value)}
                   className="h-12 bg-background border-border/50 focus:border-primary"
                 />
                 {form.formState.errors.runway && (
@@ -234,8 +261,30 @@ export default function CreateUpdatePage() {
               </div>
             </div>
 
+
             <div className="mt-8 flex justify-end">
-              <Button onClick={() => setCurrentStep(2)} size="lg" className="px-8">
+              <Button 
+                onClick={async () => {
+                  // Get current form values using watch
+                  const revenue = form.watch('revenue')
+                  const burnRate = form.watch('burnRate')
+                  const runway = form.watch('runway')
+                  const growth = form.watch('growth')
+                  
+                  
+                  // Check if required fields have values
+                  const hasRequiredFields = revenue && burnRate && runway && growth
+                  
+                  if (hasRequiredFields) {
+                    setCurrentStep(2)
+                  } else {
+                    // Trigger validation to show errors
+                    await form.trigger(['revenue', 'burnRate', 'runway', 'growth'])
+                  }
+                }} 
+                size="lg" 
+                className="px-8"
+              >
                 Continue
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -309,7 +358,29 @@ export default function CreateUpdatePage() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
-              <Button onClick={handleGenerate} size="lg" className="px-8" disabled={isGenerating}>
+              <Button 
+                onClick={async () => {
+                  // Get current form values using watch
+                  const revenue = form.watch('revenue')
+                  const burnRate = form.watch('burnRate')
+                  const runway = form.watch('runway')
+                  const growth = form.watch('growth')
+                  
+                  
+                  // Check if all required fields have values
+                  const hasAllRequiredFields = revenue && burnRate && runway && growth
+                  
+                  if (hasAllRequiredFields) {
+                    handleGenerate()
+                  } else {
+                    // Trigger validation to show errors
+                    await form.trigger()
+                  }
+                }} 
+                size="lg" 
+                className="px-8" 
+                disabled={isGenerating}
+              >
                 {isGenerating ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />

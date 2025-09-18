@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -5,99 +8,42 @@ import { Badge } from "@/components/ui/badge"
 import { Plus, FileText, Calendar, TrendingUp, Download, MoreHorizontal, Search, Filter, Bell } from "lucide-react"
 import Link from "next/link"
 
+interface Update {
+  id: string
+  title: string
+  createdAt: string
+  status: string
+  revenue: string
+  growth: string
+  burnRate: string
+  runway: string
+  highlights: string
+  challenges: string
+  asks: string
+  aiSummary: string
+}
+
 export default function DashboardPage() {
-  const updates = [
-    {
-      id: 1,
-      title: "Q4 2024 Investor Update",
-      date: "2024-12-15",
-      status: "sent",
-      revenue: "$125K",
-      growth: "+23%",
-      recipients: 8,
-    },
-    {
-      id: 2,
-      title: "November Progress Report",
-      date: "2024-11-30",
-      status: "draft",
-      revenue: "$118K",
-      growth: "+18%",
-      recipients: 0,
-    },
-    {
-      id: 3,
-      title: "Q3 2024 Investor Update",
-      date: "2024-09-30",
-      status: "sent",
-      revenue: "$98K",
-      growth: "+15%",
-      recipients: 8,
-    },
-    {
-      id: 4,
-      title: "August Milestone Update",
-      date: "2024-08-31",
-      status: "sent",
-      revenue: "$89K",
-      growth: "+12%",
-      recipients: 6,
-    },
-    {
-      id: 5,
-      title: "July Performance Review",
-      date: "2024-07-31",
-      status: "sent",
-      revenue: "$82K",
-      growth: "+8%",
-      recipients: 6,
-    },
-    {
-      id: 6,
-      title: "Q2 2024 Investor Update",
-      date: "2024-06-30",
-      status: "sent",
-      revenue: "$75K",
-      growth: "+5%",
-      recipients: 6,
-    },
-    {
-      id: 7,
-      title: "May Growth Update",
-      date: "2024-05-31",
-      status: "sent",
-      revenue: "$68K",
-      growth: "+3%",
-      recipients: 5,
-    },
-    {
-      id: 8,
-      title: "April Progress Report",
-      date: "2024-04-30",
-      status: "sent",
-      revenue: "$62K",
-      growth: "+2%",
-      recipients: 5,
-    },
-    {
-      id: 9,
-      title: "March Milestone Update",
-      date: "2024-03-31",
-      status: "sent",
-      revenue: "$58K",
-      growth: "+1%",
-      recipients: 4,
-    },
-    {
-      id: 10,
-      title: "Q1 2024 Investor Update",
-      date: "2024-03-31",
-      status: "sent",
-      revenue: "$55K",
-      growth: "0%",
-      recipients: 4,
-    },
-  ]
+  const [updates, setUpdates] = useState<Update[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchUpdates = async () => {
+      try {
+        const response = await fetch('/api/updates')
+        if (response.ok) {
+          const data = await response.json()
+          setUpdates(data)
+        }
+      } catch (error) {
+        console.error('Error fetching updates:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUpdates()
+  }, [])
 
   return (
     <div className="h-screen bg-background flex flex-col">
@@ -222,53 +168,66 @@ export default function DashboardPage() {
 
             <div className="flex-1 overflow-y-auto">
               <div className="divide-y divide-border/40">
-                {updates.map((update) => (
-                  <div key={update.id} className="p-6 hover:bg-card/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="font-semibold text-foreground">{update.title}</h3>
-                          <Badge
-                            variant={update.status === "sent" ? "default" : "secondary"}
-                            className={update.status === "sent" ? "bg-green-500/10 text-green-700 border-green-500/20" : ""}
-                          >
-                            {update.status === "sent" ? "Sent" : "Draft"}
-                          </Badge>
-                        </div>
+                {loading ? (
+                  <div className="p-6 text-center text-muted-foreground">
+                    Loading updates...
+                  </div>
+                ) : updates.length === 0 ? (
+                  <div className="p-6 text-center text-muted-foreground">
+                    No updates yet. Create your first investor update!
+                  </div>
+                ) : (
+                  updates.map((update) => (
+                    <div key={update.id} className="p-6 hover:bg-card/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="font-semibold text-foreground">{update.title}</h3>
+                            <Badge
+                              variant={update.status === "SENT" ? "default" : "secondary"}
+                              className={update.status === "SENT" ? "bg-green-500/10 text-green-700 border-green-500/20" : ""}
+                            >
+                              {update.status === "SENT" ? "Sent" : "Draft"}
+                            </Badge>
+                          </div>
 
-                        <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{new Date(update.date).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <span>Revenue: {update.revenue}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <TrendingUp className="w-4 h-4 text-green-500" />
-                            <span className="text-green-500">{update.growth}</span>
-                          </div>
-                          {update.status === "sent" && (
+                          <div className="flex items-center space-x-6 text-sm text-muted-foreground">
                             <div className="flex items-center space-x-1">
-                              <span>{update.recipients} recipients</span>
+                              <Calendar className="w-4 h-4" />
+                              <span>{new Date(update.createdAt).toLocaleDateString()}</span>
                             </div>
-                          )}
+                            {update.revenue && (
+                              <div className="flex items-center space-x-1">
+                                <span>Revenue: {update.revenue}</span>
+                              </div>
+                            )}
+                            {update.growth && (
+                              <div className="flex items-center space-x-1">
+                                <TrendingUp className="w-4 h-4 text-green-500" />
+                                <span className="text-green-500">{update.growth}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center space-x-2">
-                        {update.status === "sent" && (
-                          <Button variant="ghost" size="sm">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                          {update.status === "SENT" && (
+                            <Link href={`/dashboard/export?id=${update.id}`}>
+                              <Button variant="ghost" size="sm">
+                                <Download className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          )}
+                          <Link href={`/dashboard/export?id=${update.id}`}>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 

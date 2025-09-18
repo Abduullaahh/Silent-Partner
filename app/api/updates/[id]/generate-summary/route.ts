@@ -27,6 +27,7 @@ export async function POST(
       return NextResponse.json({ error: 'Update not found' }, { status: 404 })
     }
 
+
     // Generate AI summary
     const aiSummary = await generateInvestorUpdateSummary({
       revenue: update.revenue || '',

@@ -2,13 +2,14 @@ import { z } from 'zod'
 
 export const createUpdateSchema = z.object({
   title: z.string().min(1, 'Title is required').max(100, 'Title must be less than 100 characters'),
-  revenue: z.string().optional(),
-  burnRate: z.string().optional(),
-  runway: z.string().optional(),
-  growth: z.string().optional(),
+  revenue: z.string().min(1, 'Revenue is required'),
+  burnRate: z.string().min(1, 'Burn rate is required'),
+  runway: z.string().min(1, 'Runway is required'),
+  growth: z.string().min(1, 'Growth rate is required'),
   highlights: z.string().optional(),
   challenges: z.string().optional(),
   asks: z.string().optional(),
+  aiSummary: z.string().optional(),
 })
 
 export const updateUpdateSchema = z.object({
