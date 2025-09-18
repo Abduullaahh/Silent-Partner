@@ -14,7 +14,7 @@ export async function generateInvestorUpdateSummary(data: {
   asks?: string
 }) {
 
-  const prompt = `Generate a professional investor update summary using the EXACT data provided below. Do not use placeholders or brackets - use the actual information provided:
+  const prompt = `You are a startup founder writing a professional investor update. Transform the provided data into a compelling, detailed investor update that tells a story of progress and growth.
 
 Financial Metrics:
 - Monthly Recurring Revenue: ${data.revenue}
@@ -22,36 +22,45 @@ Financial Metrics:
 - Runway: ${data.runway}
 - Growth Rate: ${data.growth}
 
-Key Highlights (use exactly what was provided):
+Key Highlights:
 ${data.highlights || 'No highlights provided'}
 
-Current Challenges (use exactly what was provided):
+Current Challenges:
 ${data.challenges || 'No challenges provided'}
 
-Investor Asks (use exactly what was provided):
+Investor Asks:
 ${data.asks || 'No asks provided'}
 
-Please generate a structured investor update with the following format, using the ACTUAL data provided above:
+Create a professional investor update with the following structure:
 
 ## Executive Summary
-Write 2-3 sentences summarizing the overall performance and outlook using the specific financial metrics and highlights provided.
+Write 3-4 sentences that paint a picture of the company's current state, trajectory, and key achievements. Use the financial metrics to tell a story of growth, efficiency, and strategic positioning. Make it compelling and investor-focused.
 
 ## Key Highlights
-Use the EXACT highlights provided above. If the highlights are specific and detailed, use them as-is. If they are brief, expand them professionally while keeping the core message.
+Transform the provided highlights into detailed, impactful bullet points that demonstrate:
+- Specific achievements with quantified results where possible
+- Strategic initiatives and their impact
+- Team growth and capabilities
+- Customer success metrics
+- Product development milestones
+- Market positioning wins
 
 ## Current Challenges & Mitigation
-Use the EXACT challenges provided above. If the challenges are specific and detailed, use them as-is. If they are brief, expand them professionally while keeping the core message.
+Expand the challenges into a thoughtful analysis that shows:
+- Honest assessment of current obstacles
+- Specific mitigation strategies being implemented
+- Timeline for resolution
+- How challenges are being turned into opportunities
+- Risk management approach
 
 ## How You Can Help
-Use the EXACT asks provided above. If the asks are specific and detailed, use them as-is. If they are brief, expand them professionally while keeping the core message.
+Transform the asks into specific, actionable requests that show:
+- Clear value proposition for potential connections
+- Specific types of introductions needed
+- Areas where expertise would be most valuable
+- How investors can add strategic value beyond capital
 
-CRITICAL: 
-- Use the exact highlights, challenges, and asks provided above
-- Do not generate generic content
-- Do not use placeholders, brackets, or generic text
-- If the provided content is brief, expand it professionally while preserving the original meaning
-- Reference the specific numbers, highlights, challenges, and asks that were provided
-- Keep the tone professional, confident, and transparent`
+Tone: Professional, confident, transparent, and growth-oriented. Write as if addressing sophisticated investors who understand startups and want to see both progress and honest challenges.`
 
   try {
     const completion = await openai.chat.completions.create({
@@ -59,15 +68,15 @@ CRITICAL:
       messages: [
         {
           role: "system",
-          content: "You are an expert startup advisor helping founders write professional investor updates. You must use the EXACT data provided by the user - never use placeholders, brackets, or generic text. Transform the user's input into professional, well-structured content while preserving all specific details, numbers, and information they provided. Focus on clarity, transparency, and maintaining investor confidence."
+          content: "You are an expert startup advisor and investor relations specialist. Your job is to transform basic startup data into compelling, professional investor updates that tell a story of growth and opportunity. Take the user's raw input and enhance it with professional language, strategic context, and investor-focused insights while maintaining authenticity and accuracy. Focus on creating content that builds investor confidence and demonstrates the company's potential."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      max_tokens: 1500,
-      temperature: 0.3,
+      max_tokens: 2000,
+      temperature: 0.5,
     })
 
     return completion.choices[0]?.message?.content || "Unable to generate summary"
