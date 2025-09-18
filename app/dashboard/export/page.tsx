@@ -78,29 +78,41 @@ export default function ExportPage() {
     
     const parsedSummary = updateData.aiSummary ? parseAISummary(updateData.aiSummary) : null
     
+    // Helper function to clean markdown formatting for email
+    const cleanForEmail = (text: string) => {
+      return text
+        .replace(/^##\s+/gm, '') // Remove ## headers
+        .replace(/^###\s+/gm, '') // Remove ### headers
+        .replace(/^•\s+/gm, '• ') // Clean bullet points
+        .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+        .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
+        .replace(/\n\n+/g, '\n\n') // Clean up multiple newlines
+        .trim()
+    }
+    
     const emailContent = `Subject: ${updateData.title}
 
 Dear Investors,
 
 I hope this message finds you well. I'm excited to share our investor update with strong momentum across all key metrics.
 
-## Key Metrics
+KEY METRICS
 ${updateData.revenue ? `• Monthly Recurring Revenue: ${updateData.revenue}` : ''}
 ${updateData.growth ? `• Growth Rate: ${updateData.growth}` : ''}
 ${updateData.burnRate ? `• Monthly Burn Rate: ${updateData.burnRate}` : ''}
 ${updateData.runway ? `• Runway: ${updateData.runway}` : ''}
 
-## Executive Summary
-${parsedSummary?.executiveSummary || updateData.aiSummary || 'Update summary will be generated here.'}
+EXECUTIVE SUMMARY
+${parsedSummary?.executiveSummary ? cleanForEmail(parsedSummary.executiveSummary) : (updateData.aiSummary ? cleanForEmail(updateData.aiSummary) : 'Update summary will be generated here.')}
 
-## Key Highlights
-${parsedSummary?.highlights ? formatSummaryForDisplay(parsedSummary.highlights) : (updateData.highlights || 'Key highlights will be listed here.')}
+KEY HIGHLIGHTS
+${parsedSummary?.highlights ? cleanForEmail(formatSummaryForDisplay(parsedSummary.highlights)) : (updateData.highlights ? cleanForEmail(updateData.highlights) : 'Key highlights will be listed here.')}
 
-## Challenges & Mitigation
-${parsedSummary?.challenges ? formatSummaryForDisplay(parsedSummary.challenges) : (updateData.challenges || 'Current challenges and mitigation strategies will be outlined here.')}
+CHALLENGES & MITIGATION
+${parsedSummary?.challenges ? cleanForEmail(formatSummaryForDisplay(parsedSummary.challenges)) : (updateData.challenges ? cleanForEmail(updateData.challenges) : 'Current challenges and mitigation strategies will be outlined here.')}
 
-## How You Can Help
-${parsedSummary?.asks ? formatSummaryForDisplay(parsedSummary.asks) : (updateData.asks || 'Specific asks for investor support will be listed here.')}
+HOW YOU CAN HELP
+${parsedSummary?.asks ? cleanForEmail(formatSummaryForDisplay(parsedSummary.asks)) : (updateData.asks ? cleanForEmail(updateData.asks) : 'Specific asks for investor support will be listed here.')}
 
 Thank you for your continued support. Please don't hesitate to reach out if you have any questions or would like to discuss any aspect of our progress.
 
@@ -367,51 +379,219 @@ CEO, [Company Name]`
 
           {/* PDF Tab */}
           <TabsContent value="pdf">
-            <Card className="p-8 border-border/50 bg-background text-center">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-8 h-8 text-primary" />
+            <div className="space-y-6">
+              {/* PDF Preview */}
+              <Card className="p-6 border-border/50 bg-background">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">PDF Preview</h3>
+                  <Button onClick={handleDownloadPDF} size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download PDF
+                  </Button>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">Professional PDF Export</h3>
-                <p className="text-muted-foreground mb-6">
-                  Download a beautifully formatted PDF that's ready to send to your investors. Includes charts, metrics,
-                  and professional styling.
-                </p>
-                <Button onClick={handleDownloadPDF} size="lg" className="w-full">
-                  <Download className="w-4 h-4 mr-2" />
-                  Download PDF (2.3 MB)
-                </Button>
-              </div>
-            </Card>
+                
+                {/* PDF Preview Content */}
+                <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm max-w-4xl mx-auto">
+                  {/* Company Header */}
+                  <div className="text-center mb-8">
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{updateData?.title}</h1>
+                    <p className="text-gray-600">Investor Update</p>
+                    <p className="text-sm text-gray-500">{new Date(updateData?.createdAt || '').toLocaleDateString()}</p>
+                  </div>
+
+                  {/* Financial Metrics */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    {updateData?.revenue && (
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">{updateData.revenue}</div>
+                        <div className="text-sm text-gray-600">Monthly Revenue</div>
+                      </div>
+                    )}
+                    {updateData?.growth && (
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">{updateData.growth}</div>
+                        <div className="text-sm text-gray-600">Growth Rate</div>
+                      </div>
+                    )}
+                    {updateData?.burnRate && (
+                      <div className="text-center p-4 bg-orange-50 rounded-lg">
+                        <div className="text-2xl font-bold text-orange-600">{updateData.burnRate}</div>
+                        <div className="text-sm text-gray-600">Monthly Burn</div>
+                      </div>
+                    )}
+                    {updateData?.runway && (
+                      <div className="text-center p-4 bg-purple-50 rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">{updateData.runway}</div>
+                        <div className="text-sm text-gray-600">Runway</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Summary Preview */}
+                  {updateData?.aiSummary && (() => {
+                    const parsedSummary = parseAISummary(updateData.aiSummary)
+                    return (
+                      <div className="space-y-6">
+                        {parsedSummary.executiveSummary && (
+                          <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-3">Executive Summary</h2>
+                            <p className="text-gray-700 leading-relaxed">{parsedSummary.executiveSummary}</p>
+                          </div>
+                        )}
+                        
+                        {parsedSummary.highlights && (
+                          <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-3">Key Highlights</h2>
+                            <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                              {formatSummaryForDisplay(parsedSummary.highlights)}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {parsedSummary.challenges && (
+                          <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-3">Challenges & Mitigation</h2>
+                            <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                              {formatSummaryForDisplay(parsedSummary.challenges)}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {parsedSummary.asks && (
+                          <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-3">How You Can Help</h2>
+                            <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                              {formatSummaryForDisplay(parsedSummary.asks)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </div>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Email Tab */}
           <TabsContent value="email">
-            <Card className="p-8 border-border/50 bg-background text-center">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Mail className="w-8 h-8 text-primary" />
+            <div className="space-y-6">
+              {/* Email Preview */}
+              <Card className="p-6 border-border/50 bg-background">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-foreground">Email Preview</h3>
+                  <Button onClick={handleCopyEmail} size="sm" variant="outline">
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2 text-green-500" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy Email
+                      </>
+                    )}
+                  </Button>
                 </div>
-                <h3 className="text-xl font-semibold text-foreground mb-2">Email-Ready Format</h3>
-                <p className="text-muted-foreground mb-6">
-                  Copy the perfectly formatted email content and paste it directly into your email client. Subject line
-                  and formatting included.
-                </p>
-                <Button onClick={handleCopyEmail} size="lg" className="w-full bg-transparent" variant="outline">
-                  {copied ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2 text-green-500" />
-                      Copied to Clipboard!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy Email Content
-                    </>
-                  )}
-                </Button>
-              </div>
-            </Card>
+                
+                {/* Email Preview Content */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm max-w-4xl mx-auto">
+                  {/* Email Header */}
+                  <div className="border-b border-gray-200 pb-4 mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-500">From:</span>
+                      <span className="text-sm font-medium text-gray-900">you@company.com</span>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-500">To:</span>
+                      <span className="text-sm font-medium text-gray-900">investors@company.com</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500">Subject:</span>
+                      <span className="text-sm font-medium text-gray-900">{updateData?.title}</span>
+                    </div>
+                  </div>
+
+                  {/* Email Body */}
+                  <div className="prose prose-sm max-w-none">
+                    <p className="text-gray-700 mb-4">Dear Investors,</p>
+                    <p className="text-gray-700 mb-6">I hope this message finds you well. I'm excited to share our investor update with strong momentum across all key metrics.</p>
+
+                    {/* Key Metrics */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Key Metrics</h3>
+                      <ul className="list-disc list-inside space-y-1 text-gray-700">
+                        {updateData?.revenue && <li>Monthly Recurring Revenue: {updateData.revenue}</li>}
+                        {updateData?.growth && <li>Growth Rate: {updateData.growth}</li>}
+                        {updateData?.burnRate && <li>Monthly Burn Rate: {updateData.burnRate}</li>}
+                        {updateData?.runway && <li>Runway: {updateData.runway}</li>}
+                      </ul>
+                    </div>
+
+                    {/* AI Summary Content */}
+                    {updateData?.aiSummary && (() => {
+                      const parsedSummary = parseAISummary(updateData.aiSummary)
+                      
+                      // Helper function to clean markdown formatting for email preview
+                      const cleanForEmail = (text: string) => {
+                        return text
+                          .replace(/^##\s+/gm, '') // Remove ## headers
+                          .replace(/^###\s+/gm, '') // Remove ### headers
+                          .replace(/^•\s+/gm, '• ') // Clean bullet points
+                          .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold formatting
+                          .replace(/\*(.*?)\*/g, '$1') // Remove italic formatting
+                          .replace(/\n\n+/g, '\n\n') // Clean up multiple newlines
+                          .trim()
+                      }
+                      
+                      return (
+                        <div className="space-y-6">
+                          {parsedSummary.executiveSummary && (
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 mb-3">EXECUTIVE SUMMARY</h3>
+                              <p className="text-gray-700 leading-relaxed">{cleanForEmail(parsedSummary.executiveSummary)}</p>
+                            </div>
+                          )}
+                          
+                          {parsedSummary.highlights && (
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 mb-3">KEY HIGHLIGHTS</h3>
+                              <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                                {cleanForEmail(formatSummaryForDisplay(parsedSummary.highlights))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {parsedSummary.challenges && (
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 mb-3">CHALLENGES & MITIGATION</h3>
+                              <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                                {cleanForEmail(formatSummaryForDisplay(parsedSummary.challenges))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {parsedSummary.asks && (
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-900 mb-3">HOW YOU CAN HELP</h3>
+                              <div className="text-gray-700 leading-relaxed whitespace-pre-line">
+                                {cleanForEmail(formatSummaryForDisplay(parsedSummary.asks))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
+
+                    <p className="text-gray-700 mt-6 mb-4">Thank you for your continued support. Please don't hesitate to reach out if you have any questions or would like to discuss any aspect of our progress.</p>
+                    <p className="text-gray-700 mb-2">Best regards,</p>
+                    <p className="text-gray-700">[Your Name]</p>
+                    <p className="text-gray-700">CEO, [Company Name]</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
 
